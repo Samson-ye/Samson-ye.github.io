@@ -1,6 +1,6 @@
 ---
-title: 明智地使用 Windows
-date: 2020-03-07
+title: 在Linux上部署apache web服务器
+date: 2020-06-19
 tags:
  - Windows
 categories:
@@ -9,118 +9,291 @@ categories:
 
 
 
-## 离不开的 Windows 
+## 离在Linux上部署apache web服务器
 
-Windows 10 操作系统，是美国Microsoft（微软）公司所研发的新一代跨平台及设备应用的图形界面操作系统。于2015年7月29日正式发布，至今已经日趋完善。
+Apache HTTP Server（简称Apache）是[Apache软件基金会](https://baike.baidu.com/item/Apache软件基金会)的一个开放源码的网页服务器，可以在大多数计算机操作系统中运行，由于其多平台和安全性被广泛使用，是最流行的Web服务器端软件之一。它快速、可靠并且可通过简单的API扩展，将Perl/Python等解释器编译到服务器中。
 
-![](asset/20200307/windows10.jpg)
+![](asset/20200307/1.png)
 
-Windows 7 已于2020年1月14日正式结束官方支持，这意味着微软不会再为其提供任何技术服务，也不会发放任何补丁，Windows 7 已经寿终正寝。若您还想停留在 Windows 的桌面世界里，使用 Windows 10 是明智的选择。个人认为，这并不是一件坏事。作为普通用户，我从 Windows 10发布以来，一直使用至今，对 Windows 10 的使用体验还是很满意的。
+Apache HTTP服务器是一个模块化的服务器，源于NCSAhttpd服务器，经过多次修改，成为世界使用排名第一的Web服务器软件。 它可以运行在几乎所有广泛使用的计算机平台上。 Apache源于NCSAhttpd服务器，经过多次修改，成为世界上最流行的Web服务器软件之一。Apache取自“a patchy server”的读音，意思是充满补丁的服务器，因为它是自由软件，所以不断有人来为它开发新的功能、新的特性、修改原来的缺陷。Apache的特点是简单、速度快、性能稳定，并可做代理服务器来使用。 本来它只用于小型或试验Internet网络，后来逐步扩充到各种Unix系统中，尤其对Linux的支持相当完美。Apache有多种产品，可以支持SSL技术，支持多个虚拟主机。Apache是以进程为基础的结构，进程要比线程消耗更多的系统开支，不太适合于多处理器环境，因此，在一个Apache Web站点扩容时，通常是增加服务器或扩充群集节点而不是增加处理器。到目前为止Apache仍然是世界上用的最多的Web服务器，市场占有率达60%左右。世界上很多著名的网站如[Amazon](https://www.amazon.cn/)、Yahoo!、W3 Consortium、Financial Times等都是Apache的产物，它的成功之处主要在于它的源代码开放、有一支开放的开发队伍、支持跨平台的应用（可以运行在几乎所有的Unix、Windows、Linux系统平台上）以及它的可移植性等方面。 Apache的诞生极富有戏剧性。当NCSAWWW服务器项目停顿后，那些使用NCSAWWW服务器的人们开始交换他们用于该服务器的补丁程序，他们也很快认识到成立管理这些补丁程序的论坛是必要的。就这样，诞生了Apache Group，后来这个团体在NCSA的基础上创建了Apache。 Apacheweb服务器软件拥有以下特性： 1.支持最新的HTTP/1.1通信协议 2.拥有简单而强有力的基于文件的配置过程 3.支持通用网关接口 4.支持基于IP和基于域名的虚拟主机 5.支持多种方式的HTTP认证 6.集成Perl处理模块 7.集成代理服务器模块 8.支持实时监视服务器状态和定制服务器日志 9.支持服务器端包含指令(SSI) 10.支持安全Socket层(SSL) 11.提供用户会话过程的跟踪 12.支持FastCGI 13.通过第三方模块可以支持JavaServlets 如果你准备选择Web服务器，毫无疑问Apache是你的最佳选择。
 
-为什么离不开 Windows？究其原因，主要有：
 
-1. Windows 占桌面市场的份额一直是主导地位。在下面的统计中，2020年的占比是77.7%，后面紧跟的是 Apple 的 MacOS。
-   * [Global market share held by operating systems for desktop PCs, from January 2013 to January 2020](https://www.statista.com/statistics/218089/global-market-share-of-windows-7/)
+## 部署web服务设计
 
-2. Windows 的 Office 办公套件，功能强大。因市场普及度的原因，文件格式的兼容性是刚需。
-3. Windows 生态系统中有丰富的软件，包括众多商业软件、免费软件等。只有想不到，没有找不到的。
-4. 几乎全部的第三方软件/硬件厂商、都提供了 Windows 操作系统的支持，毕竟，没有人会刻意忽略处于市场领导地位的操作系统。
-
-虽然用户也会不时抱怨 Windows，特别是微软改变用户使用习惯的时候（例如开始菜单），但大部分用户并没有选择“逃离” Windows，于是只能去适应。
+本次测试目标为在Vmware平台搭建自己的apache web网站，并通过[awstats](https://baike.baidu.com/item/awstats)来对网站进行访问分析，搭建好网站后可通过对apache的配置文件进行修改来实现对httpd服务的访问控制、客户机的地址限制、用户授权限制，构建虚拟WEB主机、基于域名的虚拟主机、基于IP地址、端口的虚拟主机。最后利用宿主机的网页浏览器能够进行访问和验证搭建好的网页。 宿主机安装好Vmware控制台，准备好用于服务器搭建的Linux系统CentOS7，再准备好httpd及其tools工具包的下载链接，之后在服务器上安装服务器后下载awstats及其依赖包，完成各项配置即可。
 
 
 
 
-## 定制我的 Windows
+## 安装服务及对其进行相应的配置
 
-面对一个全新安装的 Windows 10 操作系统，我通常会做如下定制：
+1部署准备
 
-1. **开始菜单**。最受用户诟病的非“开始菜单”莫属，但我们并非没有办法，您可以安装一个开源免费的软件 [OpenShell](https://open-shell.github.io/Open-Shell-Menu/)，熟悉的”开始“菜单又回来了！它的前身是[Classic Shell](http://www.classicshell.net/)，因作者在2017年底停止开发，将代码开源，于是成了现在的OpenShell。
-2. **压缩软件**。[7-zip](https://www.7-zip.org/) 是开源免费的压缩软件，它界面简洁，稳定高效。我找不到任何理由不用它。
-3. **资源管理器软件**。 [Q-Dir](http://www.softwareok.com/?seite=Freeware/Q-Dir) 是一款免费软件，也是我目前主力使用的资源管理器软件。默认它打开4个窗口（Quad-Directory-Explorer），但我通常只使用一个。[FreeCommander](https://freecommander.com) 是另一个免费的选择。还有些用户喜欢 [Total Commander](https://www.ghisler.com)，它是商业软件，可以免费试用。
-4. **文本编辑器软件**。我喜欢用 [Notepad2-mod](https://xhmikosr.github.io/notepad2-mod/) 替代 Windows 自带的写字板（Notepad）。我还会安装 [Notepad++](https://notepad-plus-plus.org/) ，这是一款开源免费的文本编辑器软件，功能强大，是处理纯文本文件的“瑞士军刀”。
+本次部署项目准备通过wget命令来安装httpd及其tools工具包，这样就准备好了web部署所需的软件包，之后再同样通过wget来安装好AWStats及其依赖包，完成对日志分析的准备，通过配置apach来部署好web网页后再在httpd的配置文件中对配置信息进行修改来实现三种不同的访问控制，包括访问控制，客户机的地址限制，用户授权限制。同样的，修改CentOS等的配置信息来实现构建虚拟WEB主机，基于域名的虚拟主机，基于IP地址、端口的虚拟主机。 关于服务器的部署因为这次只是我自己的一个尝试，所以我没有去云服务平台购买云服务器，而是选择了Vmware Workstation平台的CentOS7虚拟机来替代，进行web的部署。
 
-您当然有其它的选择，但上述是我的偏好，仅供参考而已。
+本书所使用的软件包及其版本(可使用其他更新版本的软件）：
 
-另外，下面是我坚决不做的：
+注意：最好去官方网站找到下载包链接，避免使用百度到的包，以免下载到虚拟机后出现不可解决的问题。
 
-- 我不会安装第三方的杀毒软件，因为 Windows 自带的免费杀毒软件已经够用了。虽然有时会发现它扫描过于频繁，占用过多系统资源，但总体而言，还算不错。
-- 我不会安装第三方中文输入法，微软的拼音输入法确实不大好用，有时还让人生气，但目前也没有找到更优的选择。谷歌拼音输入法本来挺好用，可惜它年代久远，还是算了吧。
-- 我绝不安装国产软件，尤其是”3xx安全“，”管家“，”输入法“之类，它们会要求管理员权限，然后在你不知情（或者诱导）的情况下，安装全家桶，把你的电脑变成它的广告平台，弹出各种窗口，还卸载不干净。简直不胜其烦。
+[httpd-2.2.27.tar.gz](https://downloads.apache.org/httpd/) [awstats-7.0.tar.gz](http://www.awstats.org/) [perl-5.16.1.tar.gz](https://www.cpan.org/src/README.html)
 
-对于国产软件，我个人的看法或许是有点偏颇，未必全部的国产软件都这么流氓，只不过市面上大多数国产软件都是这样无底线，包括BAT系或某山等大厂都是如此（免费后面是看不见的代价）。为了安全起见，还是选择远离为好。
+本书搭建服务器的环境 CentOS7.0版本 IP地址：221.221.221.37 255.255.255.0
 
-国内的网站也建议远离，别去上面下载软件。很多网站（特别是有破解版的）都有诱导下载的广告，你甚至分不清到底哪个链接才是下载你本来想要下载的东西，极可能下载来的就是一个木马，连专业人士不小心也会中招。
+配置好yum仓库
 
+2搭建服务
 
+第1步：卸载httpd软件及相关软件包
 
-
-## 重新安装 Windows
-
-Windows 有一个很贴心的功能，可以不需要通过其它介质来重新安装 Windows 操作系统。在重置（Reset this PC）无效的情况下，您可以考虑此功能来重新安装一个“干净”的 Windows。
-
-> **注意：** 此操作有风险，请谨慎操作！执行操作前，请务必做好数据备份，特别是 C 盘的数据。一旦操作开始执行，C 盘的数据就再不能挽回了。
-
-![](asset/20200307/Setting_More_recovery_options.png)
-
-在设置菜单中，点击上图中的文字链接。
-
-进入到 ”Windows Security“，按”Get started“按钮，它将会把 Windows 10 恢复到一个全新的状态。删除全部已安装的应用程序，删除全部的驱动程序，删除全部的个人用户数据。
-
-![](asset/20200307/Windows_Security_Reset_PC.png)
-
-请耐心等待，操作完成后，您将获得一个“干净”的 Windows 10 操作系统。
+```text
+# rpm -e httpd httpd-manual webalizer subversion mod_python mod_ssl mod_perl system-config-httpd php php-cli php-ldap php-common mysql dovecot --nodeps
 
 
+注释：--nodeps是强制接触依赖关系 
+```
 
-## 用户和权限
+第2步：检查手工编译需要的4中软件包是否安装
 
-面对一个全新的 Windows 10 操作系统，我通常会创建2个本地用户：
+```text
+# rpm -q gcc
+# rpm -q gcc-c++
+# rpm -q make
+# yum install pcre-devel -y
+```
 
-1. 第一个用户名为”admin“，它是系统管理员的组成员，设置好密码。我通常只会用它来做系统级的设置，安装/删除软件，做系统级别的维护（如清理垃圾文件）等。
+第3步：解压软件包及源码编译安装Apache并进行配置
 
-2. 第二个用户是一个本地普通用户，它属于普通用户组成员，只拥有受限的权限（不能安装/删除软件，不能管理此电脑，只能修改用户相关的少数设置）。然后，登录到此用户，切换用微软的 Outlook 账号登录，设置好 PIN 用于登录。
+```text
+# tar zxvf httpd-2.2.27.tar.gz 
+# make #编译，将编译程序变为可执行程序
+# make test
+# make install #安装
+# Vi http.conf #进行基础文档配置
+# service httpd start #启动服务没有效果
+# netstat -anutp | grep http #监听http服务
+```
 
-平常工作中，基本上只用第2个普通用户登录使用电脑，从而保证操作系统的稳定性。即便碰到不良软件，它也没有足够的权限对系统造成破坏。
+至此，基础的部署已经完成，在主机上正常情况下应该可以通过在浏览器输入服务器的IP地址来看到apache web服务的欢迎画面。
 
+![](asset/20200307/2.png)
 
+> **注意：** 要保证两台设备能够正常进行连接，可使用ping指令来确认连接无误，若初次尝试ping未能连通很可能是因为防火墙，可关闭设备的防火墙。此操作有风险，请谨慎操作！
 
-我已经有一段时间没有全新安装 Windows 了，现在的新的 Windows 10 安装程序是否如下博文所述，在检查到有网络的情况下，会禁用“创建本地用户”的选项呢？若真有此事，可以拔掉网线，停用WIFI来创建第一个本地管理员账号（如上“admin”用户）。
+3构建虚拟WEB主机 虚拟Web主机在同一台服务器中运行多个Web站点，其中每一个站点并不独立占用一 台真正的计算机 httpd支持的虚拟主机类型 1、基于域名的虚拟主机 2、基于IP地址的虚拟主机 3、基于端口的虚拟主机
 
-* [Windows 10: The end of local accounts?](https://blog.ashampoo.com/en/2020-03-03/windows-10-the-end-of-local-accounts?utm_source=ashampoo&utm_medium=automail&utm_content=windows-10-the-end-of-local-accounts&utm_campaign=blog)
+第1步：基于域名的虚拟主机 需求： 1：本次将构建2个虚拟Web站点:www.piwang.com，IP地址为 221.221.221.37
 
+2：通过添加如下图中的配置信息到http服务的配置文档中实现
 
+![](asset/20200307/3.png)
 
-## 软件的安装
+3：物理主机ping域名测试
 
-Windows 应用商店（Windows Store）里已经有很丰富的软件可供选择，有免费也有收费的。但必须登录微软的账号才能下载和使用。
+CMD：C:\Users\93213>Ping www.piwang.com 4：重启httpd服务 [root@]# systemctl restart httpd
 
-对于传统（需要执行安装程序）的软件，您可以选择免费软件，在 [Gizmo's Freeware](https://www.techsupportalert.com/) 网站上搜索并选择编辑推荐的免费软件；或者找到限时免费的正版商业软件：
-* [流动日报 - 限時免費情報](https://www.newmobilelife.com/category/%e9%99%90%e6%99%82%e5%85%8d%e8%b2%bb%e6%83%85%e5%a0%b1/)，经常有 iOS App 和 Steam / Epic 平台的游戏大作限免。
-* [反斗限免](http://free.apprcn.com/)，国内的一个限免搜集网站。
-* [SharewareOnSale](https://sharewareonsale.com/)，经常有大牌的商业软件限免。
+操作完成后，您将可通过使用虚拟站点来访问您的Web页面，在此之前记得完成第四步重启httpd服务来使您的最新配置文件生效。
 
+![](asset/20200307/4.png)
 
+第2步：配置基于IP+端口的虚拟主机 1:创建配置文件 [root@localhost ~]# cd /etc/httpd/conf.d/ [root@localhost conf.d]# vim virtual.conf
 
-> **注意：**  尽量不要安装国产软件！总会找到替代品的，除非别无选择。虽然这有点偏颇，但却是比较稳妥的选择。国产软件当然也有例外，例如 XMind，初看以为是国外的软件，但实际上是开发团队位于深圳的国产软件。而且，它是有口碑的，可以信赖的软件。
+```text
+<VirtualHost 221.221.221.37:80>
+        ServerName test2
+        DocumentRoot "/var/www/html "
+</VirtualHost>
 
+<VirtualHost 221.221.221.37:38>
+        ServerName test3
+        DocumentRoot "/var/www/html"
+</VirtualHost>
+```
 
+2:修改httpd主配置文件，在Listen 80下面添加一行监控38端口 [root@localhost conf.d]# vim /etc/httpd/conf/httpd.conf Listen 38
 
-对于您要安装的软件，如果不知名，可先在互联网上搜索此软件的评价，对于有负面评价的软件，如有捆绑，有流氓行为等，要特别谨慎。
+3：重启httpd服务 [root@]# systemctl restart httpd 4：打开浏览器，查看结果
 
-其次，还需要注意：
+![](asset/20200307/5.png)
 
-* 从软件厂商的官方网站下载软件（注意必须是 HTTPS 的网站才可信），下载后核对 MD5/SHA-1 等文件哈希值，确保下载的软件包没有被偷梁换柱。
-* 推荐选择开源的软件。代码全部开源，就像是”君子坦荡荡“，无法隐藏任何”见不得人“的逻辑，甚至包括嵌入播放广告的代码。开源作者，一般都是比较有情怀的，不屑于做这种事情，毁了自己的声誉。
-* 优先选择不需要管理员权限，不需要安装的（portable）软件，解压缩即可使用。这通常意味着软件不需要访问或修改注册表，可以在普通用户权限上运行；另外，卸载也方便，直接删除文件夹即可卸载干净。
-* 在安装过程中稍加谨慎，特别注意点击“同意/下一步”按钮时的提示文字，以免安装不需要的捆绑软件。
+第3步：添加基于多个IP的虚拟主机 1:创建配置文件
 
-安装前，若有必要测试一下的话，可以在虚拟机或其它不重要的机器上安装试用无误后，再安装到主力电脑中。
+```text
+[root@localhost ~]# cd /etc/httpd/conf.d/
+[root@localhost conf.d]# vim virtual.conf
+<VirtualHost 221.221.221.37:80>
+        ServerName a.com
+        DocumentRoot "/var/www/html"    #网页路径
+</VirtualHost>
 
+<VirtualHost 221.221.221.38:80>
+        ServerName b.com
+        DocumentRoot "/var/www/html "    #网页路径
+</VirtualHost>
+```
 
+2:网卡绑定多个IP（我的网卡名是ens33，不是eth0）
 
-## 小结
+```text
+[root@localhost conf.d]# ip addr add 221.221.221.38 dev ens33
+[root@localhost conf.d]# ip addr#查看IP配置是否正确生效
+```
 
-以上是我使用 Windows 10 的一些心得体会，它能让我在至少3年内不需要重新安装 Windows 操作系统，摆脱了隔一段时间就要重新安装 Windows 操作系统的魔咒。
+3:检查配置文件是否正常
 
-非工作的情况下，我也尝试使用 [Linux Mint](https://linuxmint.com)，并且非常喜欢其 Xfce 发行版。它简洁高效，使用体验好得让人惊叹。只不过，因软件生态的原因，它还不足以取代我的 Windows 10 主力电脑。
+```text
+[root@localhost conf.d]# httpd -t
+```
+
+4：重启httpd服务
+
+```text
+[root@]# systemctl restart httpd
+```
+
+5：打开浏览器，查看结果
+
+![](asset/20200307/6.png)
+
+4 Httpd服务访问控制 作用： 1控制对网站资源的访问 2为特定的网站目录添加访问授权
+
+常用访问控制方式： 1客户机地址限制 2用户授权限制
+
+1客户机地址限制 通过配置Order、Deny from、Allow from 来限制客户机 allow、deny ：先"允许"后"拒绝" ，默认拒绝所有为明确的客户机地址。 deny、allow：先"拒绝"后"允许"，默认允许所有为明确的客户机地址
+
+```text
+ [root@www tools]# vim /usr/local/httpd/conf/httpd.conf
+<Directory />
+    Options FollowSymLinks
+    AllowOverride None
+    Order deny,allow
+    Deny from all
+</Directory>
+```
+
+2用户授权限制 第1步：httpd服务器支持使用摘要认证（Digest）和基本认证（Basic）两种方式。使用摘要认证需要在编译httpd之前添加"--enable-auth-digest"选项、但并不是所有的浏览器都支持摘要认证、基本认证不需要预先配置。
+
+```text
+[root@www tools]# cd /usr/local/httpd/
+[root@www httpd]# bin/htpasswd -c /usr/local/httpd/conf/.awspwd webadmin
+New password: 
+Re-type new password: 
+Adding password for user webadmin
+[root@www httpd]# cat /usr/local/httpd/conf/.awspwd  #确认用户数据文件
+lanqiaoke:$apr1$ICdyiYAY$VVDvzApAlvqyJ/5w3f7251
+省略-c选择、表示用户数据文件已经存在、添加新用户或修改现有用户的密码、测不需要指定-c选项
+```
+
+第2步：添加用户授权配置
+
+```text
+[root@www httpd]# vim /usr/local/httpd/conf/httpd.conf   #追加如下内容
+<Directory "/usr/local/awstats/wwwroot">
+   AuthName "AWStats Directory"
+   AuthType Basic
+   AuthUserFile /usr/lcoal/httpd/conf/.awspwd
+   require valid-user
+</Directory>
+[root@www httpd]# /usr/local/httpd/bin/apachectl restart  #重启服务使配置生效
+AuthName ：定义受保护领域的名称
+AuthType: 设置认证的类型、Basic表示基本认证
+AuthUserFile :设置用于保存用户账号、密码的认证文件路径
+require valid-user：要求认证文件存在的用户才能访问
+```
+
+第3步：重启服务并验证配置是否生效
+
+```text
+[root@]# systemctl restart httpd
+```
+
+![](asset/20200307/7.png)
+
+5 AWStats业务数据分析工具安装及配置 Awstats是一个非常简洁而且强大的统计工具。它可以统计您站点的如下信息： 一：访问量，访问次数，页面浏览量，点击数，数据流量等精确到每月、每日、每小时的数据 二：访问者国家、访问者IP、操作系统、浏览器等 三：Robots/Spiders的统计 四：纺客持续时间 五：对不同Files type 的统计信息 六：Pages-URL的统计 七：其它信息（搜索关键字等等） http://awstats.sourceforge.net/ awstats官方网站 http://www.perl.com/ perl官方网站 第1步:安装perl
+　　Awstats基于Perl的WEB日志分析工具，网上关于它的介绍还是比较多的，因为是基于perl开发的，在管在windows还是linux下都需要先安装perl环境。所以，我们先安装perl 。
+
+```text
+[root@localhost awstats]# tar xvfz perl-5.16.1.tar.gz 　　 解压
+[root@localhost awstats]# cd perl-5.16.1  　　进入目录
+[root@localhost perl-5.16.1# rm -f config.sh Policy.sh
+[root@localhost perl-5.16.1]# sh Configure -de
+[root@localhost perl-5.16.1]#make  　　编译
+[root@localhost perl-5.16.1]# make test
+[root@localhost perl-5.16.1]# make install  　　安装
+config.sh Policy.sh 　　为以前安装时的配置文件，新安装或升级安装时需要将其删除。
+sh Configure -de 　　安装使用默认配置 
+make test　　　　执行make命令， 然后make根据test目标规则， 执行规定的操作。 
+```
+
+安装完成后 perl 所在目录为 /usr/local/lib/perl5, perl 执行文件在 /usr/local/bin 中。
+
+第2步:安装awstats
+
+```text
+[root@localhost awstats]# tar xvfz awstats-6.4.tgz 
+[root@localhost awstats]# mkdir /etc/awstats
+[root@localhost awstats]# mkdir /var/lib/awstats
+上面创建的两个目录都将在后面的配置中用到，一个用于存放站点日志分析的配置文件，一个用于存放日志数据信息。 
+[root@localhost awstats]# cp -R ./awstats-7.0 /usr/local/   
+-R 表示复制目录及目录内的所有项目到/usr/local/目录下
+[root@localhost test]# mv  awstats-7.0   awstats   　　进行一个重命名，便于操作而已。
+```
+
+第3步:配置awstats
+
+```text
+[root@localhost tools]# pwd
+/usr/local/awstats//tools
+Awstats的配置有自带的配置工具awstats_configure.pl ，首先用vi打开configure.pl文件，看看第一行有关perl运行环境的配置是否正确。 
+[root@localhost tools]# vi awstats_configure.pl
+#!/usr/bin/perl
+.............
+[root@localhost tools]# pwd
+/usr/local/awstats/tools
+[root@localhost tools]# perl awstats_configure.pl  运行配置文件
+```
+
+awstats_configure.pl工具会自动修改您的apache配置，在apache的配置文件httpd.conf文件中自动修改下面信息
+
+```text
+[root@localhost conf]# pwd
+/usr/local/apache/conf
+[root@localhost conf]# vi httpd.conf
+awstats_configure.pl自动在httpd.conf文件最底部添加了以下内容：
+```
+
+![](asset/20200307/8.png)
+
+awstats_configure.pl还将根据安装过程中您的回答（要分析的网站名称）信息，自动生产 /etc/awstats/awstats.index.conf文件
+
+```text
+[root@localhost awstats]# pwd
+/etc/awstats
+[root@localhost awstats]# ls
+awstats.index.conf
+[root@localhost awstats]# vi awstats.index.conf  配置下面文件
+```
+
+![](asset/20200307/9.png)
+
+到此我们就完成了awstats的安装与配置工作.
+
+分析日志
+
+开启服务
+
+```text
+[root@localhost cgi-bin]# pwd
+/usr/local/awstats/wwwroot/cgi-bin
+[root@localhost cgi-bin]# chmod +x  awstats.pl     加可执行权限
+[root@localhost cgi-bin]# perl /awstats.pl -update -config=221.221.221.37
+```
+
+在浏览器里输入： http://localhost/awstats/awstats.pl?config=221.221.221.37 然后就可以看到生成的日志报告了.
+
+![](asset/20200307/10.png)
+
+## [#](https://lanqiaoke.netlify.app/views/technical/2020/20200307_use_windows_wisely.html#小结)小结
+
+本次实验编译完成了编译安装httpd服务器，熟悉了httpd服务的部署过程及常见配置，构建AWStats日志分析系统，httpd服务的访问控制、客户机的地址限制、用户授权限制，构建虚拟WEB主机、基于域名的虚拟主机、基于IP地址、端口的虚拟主机，利用网页浏览器能够进行访问。
+
+这是笔者初次接触嵌入式平台的Web服务部署，如有不足请还请海涵。
